@@ -47,14 +47,21 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Create android project if it is not committed
+      - name: Create the android project if it is missing or incomplete
         run: |
+          RES=android/app/src/main/res
           if [ ! -d android ]; then
             echo "android folder not found: generating it"
             npx cap add android
+          elif [ ! -f "$RES/values/strings.xml" ] || [ ! -f "$RES/values/styles.xml" ] || [ ! -f "$RES/xml/file_paths.xml" ] || [ ! -d "$RES/mipmap-hdpi" ]; then
+            echo "android folder is INCOMPLETE (resources missing): regenerating it"
+            rm -rf android
+            npx cap add android
           else
-            echo "android folder found: keeping it as is"
+            echo "android folder is complete: keeping it as is"
           fi
+          echo "--- resources present ---"
+          ls -R android/app/src/main/res | head -n 40
 
       - name: Patch AndroidManifest (camera + barcode scanner)
         run: |
@@ -126,4 +133,5 @@ jobs:
             --title "School Admin (latest)" \
             --notes "Build #${{ github.run_number }} - version 1.0.${{ github.run_number }}" \
             --target "${{ github.sha }}"
+
 
